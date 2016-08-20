@@ -154,3 +154,23 @@ class Comment(models.Model):
             'comment': self.comment
         }
         return data
+
+class Rank(models.Model):
+    webtoon = models.ForeignKey('Webtoon')
+    cnt = models.CharField(max_length=40)
+    year = models.CharField(max_length=30)
+    month = models.CharField(max_length=30)
+    dayofweek = models.CharField(max_length=30)
+
+    def __str__(self):
+        return '[cnt : ' + str(self.cnt) + ', webtoonId : ' + str(self.webtoon.id) +', month :' + str(self.month) + ']'
+
+    def serialize(self):
+        data = {
+            'year' : self.year,
+            'webtoon': self.webtoon,
+            'cnt': self.cnt,
+            'month' : self.month,
+            'dayofweek': self.dayofweek,
+        }
+        return data

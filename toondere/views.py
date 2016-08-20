@@ -4,7 +4,7 @@ import json, decimal
 from toondere import models
 from numpy import zeros
 from django.core.paginator import InvalidPage, Paginator
-from toondere.RecommendationSystem import Recommend,PredictRatings,UserTaste
+from toondere.RecommendationSystem import Recommend, UserTaste
 from django.http import Http404
 from django.db import connection
 from collections import namedtuple
@@ -26,6 +26,39 @@ for i in range(numofStars):
     userbyWebtoons[starData[i].user.id - 1]\
                   [starData[i].webtoon.id - 1] = \
                         starData[i].star
+
+
+genre = models.Webtoon.objects.values_list('genre', flat =True)
+allData = models.Webtoon.objects.all()
+genreList = []
+# 장르 자르기
+for i in genre:
+    splitItem = i.split(',')
+
+    for j in splitItem:
+        genreList.append(j)
+
+genreSet = set(genreList)
+genreSet.remove('')
+genreSet = sorted(genreSet)
+
+
+genreDict = {}
+
+index = 0
+for g in genreSet:
+    genreDict[g] = index
+    index += 1
+
+resultDict = {}
+for i in range(index):
+    resultDict[i] = set()
+
+for webtoon in allData:
+    tempList = webtoon.genre.split(',')
+    for t in tempList:
+        if t != None and t != '':
+            resultDict[genreDict[t]].add(webtoon.id - 1)
 
 # 작가별 랭킹계산
 def author_rank(request):
@@ -309,9 +342,10 @@ def userLogin(request):
         # 로그인 한 유저의 평가한 정보를 가져옴
         userId = User[0].id
         cursor = connection.cursor()
-        cursor.execute("""select (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =TRUE) as cartooncount, (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =FALSE) as webtooncount, (select count(*) from toondere_likewebtoon A where user_id= %s and A.like =true) as likecount, (select count(*) from toondere_dontseewebtoon A where user_id= %s and A.dontsee = true) as dontseecount;""", (userId, userId, userId, userId));
+        cursor.execute("""select (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =TRUE) as cartooncount, (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =FALSE) as webtooncount, (select count(*) from toondere_likewebtoon A where user_id= %s and A.like =true) as likecount, (select count(*) from toondere_dontseewebtoon A where user_id= %s and A.dontsee = true) as dontseecount, (select count(*) as logCount from toondere_userLog where user_id=%s)""", (userId, userId, userId, userId, userId));
         serialized = []
         data = dictfetchall(cursor)
+        print(data)
 
         for d in data:
 
@@ -410,41 +444,41 @@ def mydontsee(request):
 # 상세페이지
 def detail(request):
 
-    genreList = []
-    allData = models.Webtoon.objects.all()
+    #genreList = []
+    # allData = models.Webtoon.objects.all()
     webtoonId = request.POST.get('webtoonId')
     userId = request.POST.get('userId')
 
-    genre = models.Webtoon.objects.values_list('genre', flat =True)
+    #genre = models.Webtoon.objects.values_list('genre', flat =True)
 
-    # 장르 자르기
-    for i in genre:
-        splitItem = i.split(',')
+    # # 장르 자르기
+    # for i in genre:
+    #     splitItem = i.split(',')
 
-        for j in splitItem:
-            genreList.append(j)
+    #     for j in splitItem:
+    #         genreList.append(j)
 
-    genreSet = set(genreList)
-    genreSet.remove('')
-    genreSet = sorted(genreSet)
+    # genreSet = set(genreList)
+    # genreSet.remove('')
+    # genreSet = sorted(genreSet)
 
 
-    genreDict = {}
+    # genreDict = {}
 
-    index = 0
-    for g in genreSet:
-        genreDict[g] = index
-        index += 1
+    # index = 0
+    # for g in genreSet:
+    #     genreDict[g] = index
+    #     index += 1
 
-    resultDict = {}
-    for i in range(index):
-        resultDict[i] = set()
+    # resultDict = {}
+    # for i in range(index):
+    #     resultDict[i] = set()
 
-    for webtoon in allData:
-        tempList = webtoon.genre.split(',')
-        for t in tempList:
-            if t != None and t != '':
-                resultDict[genreDict[t]].add(webtoon.id - 1)
+    # for webtoon in allData:
+    #     tempList = webtoon.genre.split(',')
+    #     for t in tempList:
+    #         if t != None and t != '':
+    #             resultDict[genreDict[t]].add(webtoon.id - 1)
 
 
     rating = Recommend.predictRatingToon(
@@ -799,9 +833,10 @@ def emailLogin(request):
             # user = User[0].serialize()
             userId = User[0].id
             cursor = connection.cursor()
-            cursor.execute("""select (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =TRUE) as cartooncount, (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =FALSE) as webtooncount, (select count(*) from toondere_likewebtoon A where user_id= %s and A.like =true) as likecount, (select count(*) from toondere_dontseewebtoon A where user_id= %s and A.dontsee = true) as dontseecount""", (userId, userId, userId, userId));
+            cursor.execute("""select (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =TRUE) as cartooncount, (select count(*) from toondere_star C, toondere_webtoon D where C.webtoon_id = D.id and user_id=%s and is_cartoon =FALSE) as webtooncount, (select count(*) from toondere_likewebtoon A where user_id= %s and A.like =true) as likecount, (select count(*) from toondere_dontseewebtoon A where user_id= %s and A.dontsee = true) as dontseecount, (select count(*) as logCount from toondere_userLog where user_id=%s)""", (userId, userId, userId, userId, userId));
             serialized = []
             data = dictfetchall(cursor)
+            print(data)
 
             for d in data:
 
@@ -1061,6 +1096,7 @@ def search_tag_name(request):
 # 웹툰 좋아요 순 랭킹
 def webtoon_like(request):
 
+
     cursor = connection.cursor()
 
     cursor.execute("""select * from toondere_webtoon A, ( select webtoon_id, count(*) as cnt, round(avg(star),0)*100 as average from toondere_star group by webtoon_id ) B, (select webtoon_id, count(*) as likecnt from toondere_likewebtoon A where A.like = true group by webtoon_id) C where A.id = B.webtoon_id and A.id = C.webtoon_id and A.is_cartoon = false order by likecnt desc, cnt desc limit 30""")
@@ -1101,37 +1137,47 @@ def cartoon_like(request):
 # 웹툰 로그 순 랭킹
 def webtoon_log(request):
 
+    userId = request.POST.get('userId')
     cursor = connection.cursor()
 
-    cursor.execute("""select * from toondere_webtoon A, ( select webtoon_id, count(*) as cnt, round(avg(star),0)*100 as average from toondere_star group by webtoon_id ) B, (select webtoon_id, count(*) as logcnt from toondere_userlog group by webtoon_id) C where A.id = B.webtoon_id and A.id = C.webtoon_id and A.is_cartoon = false order by logcnt desc, cnt desc limit 30""")
+    cursor.execute("""select A.id, title, author, genre, tags, summary, media, publish, adult, thumbnail_big, link, thumbnail_small, is_cartoon, C.star, B.cnt, D.like from toondere_webtoon A, (select webtoon_id, cnt from toondere_rank where year = '2016' and month = '08' and dayofweek = '3') B left join (select * from toondere_star where user_id = {0}) C on B.webtoon_id = C.webtoon_id left join (select * from toondere_likewebtoon A where A.user_id = {1}) D on B.webtoon_id = D.webtoon_id where A.id = B.webtoon_id and is_cartoon = false order by B.cnt desc limit 30""".format(userId,userId))
 
     data = dictfetchall(cursor)
+
+    webtoonId = data[0]['id']
+    rating = Recommend.predictRatingToon(
+                resultDict, userbyWebtoons, userId, webtoonId)
 
     serialized = []
 
 
     for d in data:
-
+        d['recommendStar'] = rating
         serialized.append(d)
 
     j = json.dumps(serialized, ensure_ascii=False, default=decimal_default)
 
     return HttpResponse(j, content_type='application/json; charset=utf-8')
 
-# 웹툰 로그 순 랭킹
+# 만화 로그 순 랭킹
 def cartoon_log(request):
 
+    userId = request.POST.get('userId')
     cursor = connection.cursor()
 
-    cursor.execute("""select * from toondere_webtoon A, ( select webtoon_id, count(*) as cnt, round(avg(star),0)*100 as average from toondere_star group by webtoon_id ) B, (select webtoon_id, count(*) as logcnt from toondere_userlog group by webtoon_id) C where A.id = B.webtoon_id and A.id = C.webtoon_id and A.is_cartoon = true order by logcnt desc, cnt desc limit 30""")
+    cursor.execute("""select A.id, title, author, genre, tags, summary, media, publish, adult, thumbnail_big, link, thumbnail_small, is_cartoon, C.star, B.cnt, D.like from toondere_webtoon A, (select webtoon_id, cnt from toondere_rank where year = '2016' and month = '08' and dayofweek = '3') B left join (select * from toondere_star where user_id = {0}) C on B.webtoon_id = C.webtoon_id left join (select * from toondere_likewebtoon A where A.user_id = {1}) D on B.webtoon_id = D.webtoon_id where A.id = B.webtoon_id and is_cartoon = true order by B.cnt desc limit 30""".format(userId,userId))
 
     data = dictfetchall(cursor)
+
+    webtoonId = data[0]['id']
+    rating = Recommend.predictRatingToon(
+                resultDict, userbyWebtoons, userId, webtoonId)
 
     serialized = []
 
 
     for d in data:
-
+        d['recommendStar'] = rating
         serialized.append(d)
 
     j = json.dumps(serialized, ensure_ascii=False, default=decimal_default)

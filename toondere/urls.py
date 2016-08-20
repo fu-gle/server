@@ -5,7 +5,6 @@ urlpatterns = [
     url(r'^webtoonEvaluate/$', views.webtoon_evaluate, name='webtoon_evaluate'),
     url(r'^cartoonEvaluate/$', views.cartoon_evaluate, name='cartoon_evaluate'),
     url(r'^insert/$',views.star_insert, name='star_insert'),
-    # url(r'^webtoon/$', views.webtoon_list, name='webtoon_list'),
 
     url(r'^login/$', views.userLogin, name='userLogin'),
     url(r'^myWebtoonStar/$', views.my_webtoon_star, name='my_webtoon_star'),
